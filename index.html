@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced ECG & HRV Analysis</title>
+    <!-- Modern Typography fallback -->
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>CardioVision</h2>
+                <p>HRV Analytics</p>
+            </div>
+            
+            <div class="controls-section">
+                <label for="signal-selector">Select Built-in Record</label>
+                <select id="signal-selector">
+                    <option value="" disabled selected>Loading signals...</option>
+                </select>
+                <button id="analyze-btn" class="btn-primary" disabled>Analyze Signal</button>
+            </div>
+            
+            <div class="controls-section upload-section">
+                <label for="file-upload">Or Upload Dataset (.mat, .csv, .dat)</label>
+                <input type="file" id="file-upload" accept=".mat,.csv,.txt,.dat" class="file-input" />
+                <button id="upload-btn" class="btn-primary" disabled>Analyze Upload</button>
+            </div>
+
+            <div class="info-section">
+                <h3>About</h3>
+                <p style="font-size: 0.8rem; color: #94a3b8;">CardioVision extracts critical HRV parameters using Welch PSD, Poincaré geometry, and Sample Entropy mapping.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-nav">
+                <h1>Interactive Dashboard <span id="current-badge" class="badge"></span></h1>
+                <div id="loading" class="spinner hidden"></div>
+            </header>
+            
+            <!-- GIANT AUTONOMIC BANNER -->
+            <div class="autonomic-banner glass hidden" id="autonomic-banner">
+                <h2 class="banner-title">AUTONOMIC NERVOUS SYSTEM RESPONSE</h2>
+                <div id="sympathetic-status" class="status-indicator banner-status">Select a signal or upload a dataset to view autonomic response.</div>
+            </div>
+
+            <div class="metrics-grid">
+                <!-- Time Domain -->
+                <div class="metric-card glass">
+                    <h4>Mean RR</h4>
+                    <span class="value" id="mean-rr">--</span> <span class="unit">ms</span>
+                    <p class="subtitle">Average interval</p>
+                </div>
+                <div class="metric-card glass">
+                    <h4>SDNN</h4>
+                    <span class="value" id="sdnn">--</span> <span class="unit">ms</span>
+                    <p class="subtitle">Overall HRV</p>
+                </div>
+                <div class="metric-card glass">
+                    <h4>RMSSD</h4>
+                    <span class="value" id="rmssd">--</span> <span class="unit">ms</span>
+                    <p class="subtitle">Parasympathetic tone</p>
+                </div>
+                <div class="metric-card glass">
+                    <h4>pNN50</h4>
+                    <span class="value" id="pnn50">--</span> <span class="unit">%</span>
+                    <p class="subtitle">Vagal dominance</p>
+                </div>
+                
+                <!-- Frequency Domain & Autonomic -->
+                <div class="metric-card glass">
+                    <h4 style="color: #60a5fa;">FREQUENCY DOMAIN: LF Power</h4>
+                    <span class="value" id="lf-power">--</span> <span class="unit">ms²</span>
+                    <p class="subtitle">Sympathetic & Vagal</p>
+                </div>
+                <div class="metric-card glass">
+                    <h4 style="color: #60a5fa;">FREQUENCY DOMAIN: HF Power</h4>
+                    <span class="value" id="hf-power">--</span> <span class="unit">ms²</span>
+                    <p class="subtitle">Parasympathetic tone</p>
+                </div>
+                <div class="metric-card glass highlight-card">
+                    <h4 style="color: #60a5fa;">AUTONOMIC RESPONSE: LF/HF Ratio</h4>
+                    <span class="value" id="lf-hf">--</span>
+                    <p class="subtitle">Sympathovagal Balance</p>
+                </div>
+            </div>
+
+            <!-- Charts Container -->
+            <div class="charts-grid">
+                
+                <!-- PAN-TOMPKINS PIPELINE -->
+                <div class="chart-container glass pipeline-container">
+                    <h3 style="color: #60a5fa;">Pan-Tompkins Algorithm Pipeline (5s Step-by-Step Visualization)</h3>
+                    <div class="pipeline-grid">
+                        <div class="pipeline-step">
+                            <h4>Step 1: Raw Normalized ECG</h4>
+                            <div class="canvas-wrapper"><canvas id="rawChart"></canvas></div>
+                        </div>
+                        <div class="pipeline-step">
+                            <h4>Step 2: Bandpass Filter (5-15 Hz)</h4>
+                            <div class="canvas-wrapper"><canvas id="filteredChart"></canvas></div>
+                        </div>
+                        <div class="pipeline-step">
+                            <h4>Step 3: Squared Derivative</h4>
+                            <div class="canvas-wrapper"><canvas id="squaredChart"></canvas></div>
+                        </div>
+                        <div class="pipeline-step">
+                            <h4>Step 4: Moving Window Integration & Peak Detection</h4>
+                            <div class="canvas-wrapper"><canvas id="mwiChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container glass">
+                    <h3>RR Intervals (Tachogram)</h3>
+                    <div class="hrv-canvas-wrapper"><canvas id="rrChart"></canvas></div>
+                </div>
+
+                <div class="chart-container glass">
+                    <h3>Poincaré Plot</h3>
+                    <div class="poincare-stats" id="poincare-stats">
+                        <div style="margin-bottom: 3px;">SD1: -- ms</div>
+                        <div style="margin-bottom: 3px;">SD2: -- ms</div>
+                        <div>SampEn: --</div>
+                    </div>
+                    <div class="hrv-canvas-wrapper"><canvas id="poincareChart"></canvas></div>
+                </div>
+
+                <div class="chart-container glass">
+                    <h3>Power Spectral Density (PSD)</h3>
+                    <div class="hrv-canvas-wrapper"><canvas id="psdChart"></canvas></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
